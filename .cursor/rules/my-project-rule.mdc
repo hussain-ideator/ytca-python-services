@@ -1,0 +1,142 @@
+---
+alwaysApply: true
+---
+assistant_ruleset:
+  title: "Unified Code Quality Ruleset for Django (Python) & Go (Golang)"
+
+  applies_to:
+    - language: python
+      framework: django
+    - language: go
+
+  trigger_conditions:
+    - prompt_contains: ["fix", "review", "refactor", "optimize", "clean", "harden", "test"]
+
+  rules:
+
+    # ✅ Security
+    - id: security
+      description: |
+        For Django (Python):
+        - Avoid hardcoded secrets or API keys.
+        - Use `get_object_or_404()` to prevent leaking data.
+        - Validate CSRF, authentication, and permissions.
+        - Prevent XSS with `safe` carefully.
+        - Check for open CORS/CSRF/exposed admin.
+
+        For Go (Golang):
+        - Ensure proper error handling (don’t ignore errors).
+        - Avoid unsafe memory usage or unchecked pointer dereferencing.
+        - Sanitize inputs and validate user data (e.g., SQL injection).
+        - Use `context.Context` for passing contextual information safely.
+      severity: high
+
+    # ⚡ Performance
+    - id: performance
+      description: |
+        For Django (Python):
+        - Avoid N+1 queries with `select_related` or `prefetch_related`.
+        - Optimize ORM queries, use `bulk_create`, `bulk_update` where appropriate.
+        - Avoid loading entire querysets into memory unnecessarily.
+
+        For Go (Golang):
+        - Minimize unnecessary memory allocations (use `sync.Pool` for reuse).
+        - Avoid blocking IO operations on critical paths; use goroutines for concurrency.
+        - Optimize database connections (limit open connections, reuse).
+
+      severity: high
+
+    # 🚨 Code Smells
+    - id: code-smells
+      description: |
+        For Django (Python):
+        - Avoid large views and models (split them if over 100 lines).
+        - Excessive nesting in views or templates.
+        - Avoid magic numbers or strings.
+
+        For Go (Golang):
+        - Avoid too many arguments in functions (consider structs).
+        - Reduce nesting and complexity in functions.
+        - Prefer simple, clear code over clever hacks.
+
+      severity: medium
+
+    # 🧼 Maintainability
+    - id: maintainability
+      description: |
+        For Django (Python):
+        - Use function/class separation and apply the DRY principle.
+        - Use CBVs for complex views, FBVs for simple ones.
+        - Keep apps modular with clear boundaries.
+        - Split settings (`settings.py`) for different environments.
+
+        For Go (Golang):
+        - Favor clear, idiomatic Go code (e.g., use `defer` for resource cleanup).
+        - Keep functions small and single-purpose.
+        - Keep packages focused and modular.
+
+      severity: high
+
+    # 📝 Documentation
+    - id: documentation
+      description: |
+        For Django (Python):
+        - Ensure docstrings for all public methods, views, models, serializers, and forms.
+        - Use Google-style or NumPy-style docstrings.
+        - Document custom admin or commands.
+
+        For Go (Golang):
+        - Ensure all exported functions, structs, and methods have GoDoc-compatible comments.
+        - Provide example usage in comments where appropriate.
+      severity: low
+
+    # 🧪 Unit Tests
+    - id: unit-tests
+      description: |
+        For Django (Python):
+        - Ensure test coverage ≥80%.
+        - Use `pytest` or `unittest` and mock DB/API where necessary.
+        - Ensure views, models, serializers, and forms are fully tested.
+
+        For Go (Golang):
+        - Ensure coverage ≥80%, and use `testing` package.
+        - Test error handling and edge cases.
+        - Mock dependencies when necessary to isolate tests.
+      severity: high
+
+    # 🔍 Context Awareness
+    - id: missing-context
+      description: |
+        For Django (Python):
+        - Flag areas where assumptions are made without clear context (e.g., magic values, dynamic keys).
+        - Ensure imports/variables are defined and properly scoped.
+
+        For Go (Golang):
+        - Detect potential race conditions and unhandled contexts.
+        - Ensure all dependencies (e.g., external services, DB connections) are properly passed via context.
+
+      severity: medium
+
+    # 🧠 Framework Best Practices
+    - id: framework-best-practices
+      description: |
+        For Django (Python):
+        - Use `settings.py` and `.env` for proper settings management (no secrets in code).
+        - Prefer `ModelForm`, `Form` for form handling rather than manually parsing `request.POST`.
+        - Avoid business logic in views/templates/signals.
+        - Use `reverse`/`reverse_lazy` for URL resolution, not hardcoded strings.
+        - Implement a custom user model if needed early on.
+
+        For Go (Golang):
+        - Follow Go idioms for error handling, context passing, and logging.
+        - Use `defer` for cleaning up resources (files, DB connections).
+        - Use `goroutines` for concurrency and always handle synchronization.
+        - Prefer `net/http` for simple web apps or more specialized frameworks (Gin/Echo) as needed.
+      severity: high
+
+  output:
+    - suggestions: true
+    - inline-comments: true
+    - file-rewrites: optional
+    - unit-test-suggestions: true
+    - doc-improvements: true
