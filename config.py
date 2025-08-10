@@ -12,13 +12,14 @@ class Settings:
     """Application settings loaded from environment variables"""
     
     def __init__(self):
-        # Load environment variables from config.env file
-        env_file = Path("config.env")
-        if env_file.exists():
-            load_dotenv(env_file)
-        else:
-            # Fallback to .env file if config.env doesn't exist
-            load_dotenv()
+        if not os.getenv("RENDER"):
+            # Load environment variables from config.env file
+            env_file = Path("config.env")
+            if env_file.exists():
+                load_dotenv(env_file)
+            else:
+                # Fallback to .env file if config.env doesn't exist
+                load_dotenv()
     
     # Database Configuration
     @property
