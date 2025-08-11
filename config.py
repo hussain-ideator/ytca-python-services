@@ -12,14 +12,13 @@ class Settings:
     """Application settings loaded from environment variables"""
     
     def __init__(self):
-        if not os.getenv("RENDER"):
-            # Load environment variables from config.env file
-            env_file = Path("config.env")
-            if env_file.exists():
-                load_dotenv(env_file)
-            else:
-                # Fallback to .env file if config.env doesn't exist
-                load_dotenv()
+        # Load environment variables from config.env file
+        env_file = Path("config.env")
+        if env_file.exists():
+            load_dotenv(env_file)
+        else:
+            # Fallback to .env file if config.env doesn't exist
+            load_dotenv()
     
     # Database Configuration
     @property
@@ -48,8 +47,24 @@ class Settings:
     
     @property
     def database_full_path(self) -> Path:
-        """Get the full path to the database file"""
+        """Get the full path to the database file (only for local databases)"""
+        if self.is_cloud_database:
+            # For cloud databases, return a placeholder path
+            return Path("cloud_database")
         return self.database_path / self.database_file
+    
+    @property
+    def is_cloud_database(self) -> bool:
+        """Check if we're using a cloud database"""
+        db_url = os.getenv("DATABASE_URL", "")
+        return db_url.startswith("sqlitecloud://")
+    
+    @property
+    def cloud_connection_string(self) -> Optional[str]:
+        """Get the cloud database connection string"""
+        if self.is_cloud_database:
+            return os.getenv("DATABASE_URL")
+        return None
     
     # Ollama Configuration
     @property
@@ -87,15 +102,17 @@ class Settings:
         return os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
     
     def ensure_database_directory(self):
-        """Ensure the database directory exists"""
-        self.database_path.mkdir(parents=True, exist_ok=True)
+        """Ensure the database directory exists (only for local databases)"""
+        if not self.is_cloud_database:
+            self.database_path.mkdir(parents=True, exist_ok=True)
     
     def get_config_summary(self) -> dict:
         """Get a summary of current configuration (without sensitive data)"""
-        return {
+        summary = {
             "database_type": self.database_type,
             "database_path": str(self.database_path),
             "database_file": self.database_file,
+            "is_cloud_database": self.is_cloud_database,
             "ollama_base_url": self.ollama_base_url,
             "ollama_model": self.ollama_model,
             "api_host": self.api_host,
@@ -103,6 +120,17 @@ class Settings:
             "environment": self.environment,
             "debug": self.debug
         }
+        
+        if self.is_cloud_database:
+            # Hide sensitive API key but show that we're using cloud
+            cloud_url = self.cloud_connection_string or ""
+            if "apikey=" in cloud_url:
+                masked_url = cloud_url.split("apikey=")[0] + "apikey=***masked***"
+                summary["database_cloud_url"] = masked_url
+            else:
+                summary["database_cloud_url"] = cloud_url
+        
+        return summary
 
 # Global settings instance
 settings = Settings()

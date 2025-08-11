@@ -142,3 +142,4 @@ If upgrading from a version with hardcoded configuration:
 1. Create `config.env` with your current settings
 2. The application will automatically use the new configuration system
 3. Previous database files will continue to work in their current locations
+

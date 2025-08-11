@@ -24,3 +24,4 @@ try:
         print(f"❌ Health check failed: {response.status_code}")
 except Exception as e:
     print(f"❌ Error: {e}")
+
