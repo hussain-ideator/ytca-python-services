@@ -47,6 +47,20 @@ app = FastAPI(
     version="2.0.0"
 )
 
+# URL normalization middleware to handle double slashes
+@app.middleware("http")
+async def normalize_path_middleware(request, call_next):
+    """Normalize URL paths to handle double slashes and trailing slashes"""
+    # Normalize double slashes to single slashes
+    if "//" in str(request.url.path) and str(request.url.path) != "/":
+        normalized_path = str(request.url.path).replace("//", "/")
+        # Rebuild the URL with normalized path
+        request.scope["path"] = normalized_path
+        request.scope["raw_path"] = normalized_path.encode()
+    
+    response = await call_next(request)
+    return response
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -989,6 +1003,7 @@ async def save_channel_engagement(engagement_data: ChannelEngagementSave):
         raise HTTPException(status_code=500, detail=f"Database save failed: {str(e)}")
 
 @app.post("/analyze-keywords", response_model=ChannelStrategyResponse)
+@app.post("//analyze-keywords", response_model=ChannelStrategyResponse)  # Handle double slash variant
 async def analyze_keywords(request: KeywordAnalysisRequest):
     """
     Analyze keywords directly using LLM without requiring pre-existing database data
